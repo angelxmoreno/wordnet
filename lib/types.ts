@@ -30,17 +30,11 @@ export interface ParsedDataLine {
 
     meta: {
         synsetOffset: number;
-
         lexFilenum: number;
-
         synsetType: string;
-
         wordCount: number;
-
         words: Word[];
-
         pointerCount: number;
-
         pointers: Pointer[];
     };
 }

@@ -22,9 +22,6 @@ let _index: WordNetIndex = {};
 let _data: WordNetData = {};
 
 // Utilities.
-function toNumber(str: string, radix: number = 10): number {
-    return parseInt(str, radix);
-}
 function getKey(word: string): string {
     return `${KEY_PREFIX}${word}`;
 }
@@ -167,7 +164,7 @@ function parseIndexLine(line: string): ParsedIndexLine {
     if (pointerCountStr === undefined) {
         throw new Error(`Invalid index line format: missing pointer count in line "${line}"`);
     }
-    const pointerCount = toNumber(pointerCountStr);
+    const pointerCount = parseInt(pointerCountStr, 10);
 
     // Iterate through the pointers.
     const pointers: string[] = [];
@@ -181,16 +178,16 @@ function parseIndexLine(line: string): ParsedIndexLine {
 
     // Extract remaining values.
     const [senseCountStr, tagSenseCountStr, ...offsetStrs] = parts;
-    const synsetOffsets = offsetStrs.map((offset) => toNumber(offset));
+    const synsetOffsets = offsetStrs.map((offset) => parseInt(offset, 10));
 
     return {
         lemma,
         pos,
-        synsetCount: toNumber(synsetCountStr),
+        synsetCount: parseInt(synsetCountStr, 10),
         pointerCount,
         pointers,
-        senseCount: toNumber(senseCountStr),
-        tagSenseCount: toNumber(tagSenseCountStr),
+        senseCount: parseInt(senseCountStr, 10),
+        tagSenseCount: parseInt(tagSenseCountStr, 10),
         synsetOffsets,
     };
 }
@@ -228,7 +225,7 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
     if (wordCountStr === undefined) {
         throw new Error(`Invalid data line format: missing word count in line "${line}"`);
     }
-    const wordCount = toNumber(wordCountStr, 16);
+    const wordCount = parseInt(wordCountStr, 16);
     const words: Word[] = [];
     for (let wordIdx = 0; wordIdx < wordCount; wordIdx++) {
         const w = parts.shift();
@@ -238,7 +235,7 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
         }
         words.push({
             word: w,
-            lexId: toNumber(lId, 16),
+            lexId: parseInt(lId, 16),
         });
     }
 
@@ -247,7 +244,7 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
     if (pointerCountStr === undefined) {
         throw new Error(`Invalid data line format: missing pointer count in line "${line}"`);
     }
-    const pointerCount = toNumber(pointerCountStr);
+    const pointerCount = parseInt(pointerCountStr, 10);
     const pointers: Pointer[] = [];
     for (let pointerIdx = 0; pointerIdx < pointerCount; pointerIdx++) {
         const pointerSymbol = parts.shift();
@@ -293,8 +290,8 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
     return {
         glossary,
         meta: {
-            synsetOffset: toNumber(synsetOffsetStr),
-            lexFilenum: toNumber(lexFilenumStr),
+            synsetOffset: parseInt(synsetOffsetStr, 10),
+            lexFilenum: parseInt(lexFilenumStr, 10),
             synsetType: SYNSET_TYPE_MAP[synsetType],
             wordCount,
             words,
