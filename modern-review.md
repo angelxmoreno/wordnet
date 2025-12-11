@@ -9,20 +9,20 @@ This document outlines a comprehensive plan to modernize the `wordnet` npm modul
 - **Objective:** Replace Node.js and npm with Bun.
 - **Rationale:** Bun offers a faster runtime, a built-in package manager, and a native test runner, simplifying the development environment.
 - **Action Items:**
-    - Run `bun init` to initialize a Bun project. This will update your `package.json` file.
-    - **Update `package.json`**: Add `\"packageManager\": \"bun@~1.1.0\"` and update the `engines` field to include `\"bun\": \">=1.3.0\"`.
-    - Remove `node_modules` and `package-lock.json` (if present) and run `bun install` to regenerate the lockfile (`bun.lockb`).
+    - **[COMPLETED]** Run `bun init` to initialize a Bun project. This will update your `package.json` file.
+    - **[COMPLETED]** **Update `package.json`**: Add `\"packageManager\": \"bun@~1.1.0\"` and update the `engines` field to include `\"bun\": \">=1.3.0\"`.
+    - **[COMPLETED]** Remove `node_modules` and `package-lock.json` (if present) and run `bun install` to regenerate the lockfile (`bun.lockb`).
 
 ### 1.2. Language: TypeScript
 
 - **Objective:** Convert the entire codebase from JavaScript to TypeScript.
 - **Rationale:** TypeScript provides static typing, improving code quality, and developer productivity.
 - **Action Items:**
-    - After running `bun init`, a `jsconfig.json` will be created. This file is for JavaScript projects.
-    - Rename `jsconfig.json` to `tsconfig.json` and add the necessary TypeScript-specific compiler options.
-    - Rename all `.js` files in `lib/`, `test/`, and `examples/` to `.ts`.
-    - Add type definitions for the WordNet data structures.
-    - Refactor the code to leverage TypeScript features like interfaces and async/await.
+    - **[COMPLETED]** After running `bun init`, a `jsconfig.json` will be created. This file is for JavaScript projects.
+    - **[COMPLETED]** Rename `jsconfig.json` to `tsconfig.json` and add the necessary TypeScript-specific compiler options.
+    - **[COMPLETED]** Rename all `.js` files in `lib/`, `test/`, and `examples/` to `.ts`.
+    - **[COMPLETED]** Add type definitions for the WordNet data structures.
+    - **[COMPLETED]** Refactor the code to leverage TypeScript features like interfaces and async/await.
 
 ## 2. Tooling and Automation
 
@@ -31,8 +31,8 @@ This document outlines a comprehensive plan to modernize the `wordnet` npm modul
 - **Objective:** Replace the `tape` testing framework with `bun:test`.
 - **Rationale:** `bun:test` is a fast, Jest-compatible test runner built into Bun.
 - **Action Items:**
-    - Uninstall `tape` and `nyc`.
-    - Rewrite the tests in `test/wordnet.ts` using the `bun:test` API (e.g., `test`, `expect`).
+    - **[COMPLETED]** Uninstall `tape` and `nyc`.
+    - **[COMPLETED]** Rewrite the tests in `test/wordnet.ts` using the `bun:test` API (e.g., `test`, `expect`).
     - Expand test coverage to include the TODOs mentioned in the original `test/wordnet.js`.
 
 ### 2.2. Linting and Formatting: BiomeJS
@@ -69,9 +69,9 @@ This document outlines a comprehensive plan to modernize the `wordnet` npm modul
 - **Objective:** Modernize the file reading and data parsing logic.
 - **Rationale:** The current `lib/reader.js` is a legacy implementation that can be replaced with modern, more efficient APIs.
 - **Action Items:**
-    - Remove `lib/reader.js`.
-    - In `lib/wordnet.ts`, replace the custom reader with `Bun.file(path).text()` for reading index files and `Bun.file(path).stream()` for data files.
-    - Refactor the promise-based code to use `async/await` for better readability.
+    - **[COMPLETED]** Remove `lib/reader.js`.
+    - **[COMPLETED]** In `lib/wordnet.ts`, replace the custom reader with `Bun.file(path).text()` for reading index files and `Bun.file(path).stream()` for data files.
+    - **[COMPLETED]** Refactor the promise-based code to use `async/await` for better readability.
 
 ### 3.2. Project Structure
 
