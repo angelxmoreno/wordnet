@@ -6,62 +6,64 @@ let word: string | undefined;
 let databaseDir: string | undefined;
 
 for (let i = 0; i < args.length; i++) {
-  if ((args[i] === '-d' || args[i] === '--database') && i + 1 < args.length) {
-    databaseDir = args[++i];
-  } else if (!word) {
-    word = args[i];
-  }
+    if ((args[i] === '-d' || args[i] === '--database') && i + 1 < args.length) {
+        databaseDir = args[++i];
+    } else if (!word) {
+        word = args[i];
+    }
 }
 
 if (!word) {
-  console.log('Usage: bun run lookup <word> [-d <database-path>]');
-  process.exit(1);
+    console.log('Usage: bun run lookup <word> [-d <database-path>]');
+    process.exit(1);
 }
 
 function printWord(def: wordnet.ParsedDataLine, includePointers: boolean) {
-  let words = def.meta.words.map(w => w.word).join(' ');
+    if (word) {
+        const words = def.meta.words.map((w) => w.word).join(' ');
 
-  console.log(`  type: ${def.meta.synsetType}`)
-  console.log(`  words: ${words.trim()}`);
-  console.log(`  ${def.glossary}\n`);
+        console.log(`  type: ${def.meta.synsetType}`);
+        console.log(`  words: ${words.trim()}`);
+        console.log(`  ${def.glossary}\n`);
 
-  /* Print pointers */
-  if (includePointers) {
-    def.meta.pointers.forEach(function(pointer) {
-      if (!pointer.data || !pointer.data.meta) {
-        return;
-      }
+        /* Print pointers */
+        if (includePointers) {
+            def.meta.pointers.forEach((pointer) => {
+                if (!pointer.data || !pointer.data.meta) {
+                    return;
+                }
 
-      /* Print the word only if contains (or prefixes) the look up expression */
-      let found = false;
-      pointer.data.meta.words.forEach(function(aWord) {
-        if (aWord.word.indexOf(word!) === 0) { // Use non-null assertion for 'word'
-          found = true;
+                /* Print the word only if contains (or prefixes) the look up expression */
+                let found = false;
+                pointer.data.meta.words.forEach((aWord) => {
+                    if (aWord.word.indexOf(word) === 0) {
+                        found = true;
+                    }
+                });
+
+                if (found || ['*', '='].indexOf(pointer.pointerSymbol) > -1) {
+                    printWord(pointer.data, false);
+                }
+            });
         }
-      });
-
-      if (found || ['*', '='].indexOf(pointer.pointerSymbol) > -1) {
-        printWord(pointer.data, false);
-      }
-    });
-  }
+    }
 }
 
 (async () => {
-  await wordnet.init(databaseDir);
+    await wordnet.init(databaseDir);
 
-  try {
-    const definitions = await wordnet.lookup(word);
-    console.log(`\n  ${word}\n`);
+    try {
+        const definitions = await wordnet.lookup(word);
+        console.log(`\n  ${word}\n`);
 
-    definitions.forEach((definition) => {
-      printWord(definition, true);
-    });
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      console.error(e.stack || e);
-    } else {
-      console.error(e);
+        definitions.forEach((definition) => {
+            printWord(definition, true);
+        });
+    } catch (e: unknown) {
+        if (e instanceof Error) {
+            console.error(e.stack || e);
+        } else {
+            console.error(e);
+        }
     }
-  }
 })();
