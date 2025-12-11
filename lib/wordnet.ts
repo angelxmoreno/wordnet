@@ -83,6 +83,10 @@ function getKey(word: string): string { return `${KEY_PREFIX}${word}` }
  * @return {Promise} Empty promise object.
  */
 export async function init(databaseDir?: string): Promise<void> {
+  // Reset state
+  _index = {};
+  _data = {};
+
   const extensions = Object.keys(EXTENSIONS_MAP);
 
   if (!databaseDir) {
@@ -91,10 +95,9 @@ export async function init(databaseDir?: string): Promise<void> {
 
   // Read data from all index files into memory.
   // NOTE: We have to run this serially in order to ensure consistent results.
-  await extensions.reduce(async (p, ext) => {
-    await p;
-    return readIndex(`${databaseDir}/index.${ext}`);
-  }, Promise.resolve());
+  for (const ext of extensions) {
+    await readIndex(`${databaseDir}/index.${ext}`);
+  }
 
   // Store the paths to the data files.
   await Promise.all(extensions.map(async (ext) => {
@@ -121,7 +124,11 @@ export function list(): string[] {
  * @return {Promise} Resolves with definitions for the given word.
  */
 export async function lookup(word: string, skipPointers: boolean = false): Promise<ParsedDataLine[]> {
-  let key = getKey(word.replace(new RegExp(SPACE_CHAR, 'g'), '_'));
+  // Normalize all Unicode whitespace to underscores and apply Unicode normalization
+  const normalizedWord = word
+    .normalize('NFKC')
+    .replace(/[\s\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]+/g, '_');
+  let key = getKey(normalizedWord);
   let definitions = _index[key];
 
   if (!definitions) {
@@ -155,11 +162,9 @@ async function readData(definition: Definition, skipPointers: boolean): Promise<
     return Promise.reject(new Error(`No file path found for POS: ${pos}`));
   }
 
-  // Read from currently open file using Bun's slice
-  // The goal is to read one line, and a line can be long.
-  // We'll read a chunk and take the first line from it.
-  const maxReadLength = 2000; // Max bytes to read to ensure we get at least one full line
-
+  // The goal is to read one line. The longest line in the WordNet data files is
+  // around 13000 bytes. We'll read a chunk of 15000 bytes to be safe.
+  const maxReadLength = 15000;
   const file = Bun.file(filePath);
   const slicedFile = file.slice(synsetOffset, synsetOffset + maxReadLength);
   const content = await slicedFile.text();
@@ -204,7 +209,7 @@ function parseIndexLine(line: string): ParsedIndexLine {
     return { isComment: true } as ParsedIndexLine; // Cast to ParsedIndexLine as it will be used as such
   }
 
-  let [ lemma, pos, synsetCountStr, ...parts ] = line.split(SPACE_CHAR);
+  let [ lemma, pos, synsetCountStr, ...parts ] = line.trim().split(SPACE_CHAR);
   let pointerCountStr = parts.shift();
   let pointerCount = toNumber(pointerCountStr!); // Use ! for non-null assertion
 
@@ -241,7 +246,8 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
   // synset_offset  lex_filenum  ss_type  w_cnt  word  lex_id  [word  lex_id...]  p_cnt  [ptr...]  [frames...]  |   gloss
 
   // Separate metadata from glossary.
-  let metaAndGlossary = line.split('|');
+  const glossIndex = line.indexOf('|');
+  let metaAndGlossary = [line.slice(0, glossIndex), line.slice(glossIndex + 1)];
   let metadata = metaAndGlossary[0].split(' ');
   let glossary = metaAndGlossary[1] ? metaAndGlossary[1].trim() : '';
 
