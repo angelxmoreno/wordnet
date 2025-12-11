@@ -19,9 +19,7 @@ if (!word) {
 }
 
 function printWord(def: wordnet.ParsedDataLine, includePointers: boolean) {
-  let words = def.meta.words.reduce((str, wordObj) => {
-    return `${str} ${wordObj.word}`;
-  }, '');
+  let words = def.meta.words.map(w => w.word).join(' ');
 
   console.log(`  type: ${def.meta.synsetType}`)
   console.log(`  words: ${words.trim()}`);
