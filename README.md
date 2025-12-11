@@ -7,10 +7,10 @@ This project is a modernized fork of the original [words/wordnet](https://github
 *   **Runtime Environment**: Migrated from Node.js to **Bun**, utilizing its performance benefits and integrated tooling.
 *   **Language**: Rewritten entirely in **TypeScript** for enhanced type safety, better maintainability, and improved developer experience.
 *   **Modern Tooling**:
-    *   **Bun**: Used as the primary package manager, test runner (`bun:test`), and runtime.
-    *   **BiomeJS**: Integrated for comprehensive linting and formatting.
-    *   **Lefthook**: Configured for Git hooks (e.g., pre-commit checks).
-    *   **Conventional Commits**: Adopted for standardized commit messages.
+  *   **Bun**: Used as the primary package manager, test runner (`bun:test`), and runtime.
+  *   **BiomeJS**: Integrated for comprehensive linting and formatting.
+  *   **Lefthook**: Configured for Git hooks (e.g., pre-commit checks).
+  *   **Conventional Commits**: Adopted for standardized commit messages.
 *   **Improved Logic**: Addressed a critical bug where only the first sense of a word was returned; the modernized version now correctly retrieves all available senses.
 *   **API Enhancements**: The API has been updated to reflect TypeScript types and modern asynchronous patterns.
 
@@ -49,14 +49,14 @@ Check out the [examples folder](examples) for more.
 
 # API
 
-### `wordnet.init([databaseDir])`
+## `wordnet.init([databaseDir])`
 
 Loads the WordNet database. This is an `async` function.
 Takes an optional folder path (as a `String`) to the WordNet index and data files.
 Resets the internal state (`_index`, `_data`) on each call, preventing state pollution.
 Returns a `Promise<void>`. Rejects with an error if the `databaseDir` is invalid or files are missing.
 
-### `wordnet.lookup(word, [skipPointers])`
+## `wordnet.lookup(word, [skipPointers])`
 
 Looks up a word in the loaded database. This is an `async` function.
 Returns a `Promise<ParsedDataLine[]>`, resolving with definitions (metadata and glossary) for the given word.
@@ -64,7 +64,7 @@ The definitions include pointers to related words, which can be omitted by passi
 Now correctly retrieves all senses of a word from the WordNet database.
 Rejects with an error if no definitions are found for the word.
 
-### `wordnet.list()`
+## `wordnet.list()`
 
 Lists all available words in the WordNet database. This is a `synchronous` function and should only be called after `wordnet.init()` has completed.
 Returns `string[]` (an array of all words).
