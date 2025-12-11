@@ -1,3 +1,4 @@
+import type { ParsedDataLine, Pointer, Word } from '../lib/types';
 import * as wordnet from '../lib/wordnet';
 
 // Simple argument parsing, replacing commander
@@ -18,9 +19,9 @@ if (!word) {
     process.exit(1);
 }
 
-function printWord(def: wordnet.ParsedDataLine, includePointers: boolean) {
+function printWord(def: ParsedDataLine, includePointers: boolean) {
     if (word) {
-        const words = def.meta.words.map((w) => w.word).join(' ');
+        const words = def.meta.words.map((w: Word) => w.word).join(' ');
 
         console.log(`  type: ${def.meta.synsetType}`);
         console.log(`  words: ${words.trim()}`);
@@ -28,14 +29,14 @@ function printWord(def: wordnet.ParsedDataLine, includePointers: boolean) {
 
         /* Print pointers */
         if (includePointers) {
-            def.meta.pointers.forEach((pointer) => {
+            def.meta.pointers.forEach((pointer: Pointer) => {
                 if (!pointer.data || !pointer.data.meta) {
                     return;
                 }
 
                 /* Print the word only if contains (or prefixes) the look up expression */
                 let found = false;
-                pointer.data.meta.words.forEach((aWord) => {
+                pointer.data.meta.words.forEach((aWord: Word) => {
                     if (aWord.word.indexOf(word) === 0) {
                         found = true;
                     }
@@ -50,9 +51,8 @@ function printWord(def: wordnet.ParsedDataLine, includePointers: boolean) {
 }
 
 (async () => {
-    await wordnet.init(databaseDir);
-
     try {
+        await wordnet.init(databaseDir);
         const definitions = await wordnet.lookup(word);
         console.log(`\n  ${word}\n`);
 

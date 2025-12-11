@@ -15,56 +15,7 @@ const SYNSET_TYPE_MAP: Record<string, string> = {
     r: 'adverb',
 };
 
-interface WordNetIndex {
-    [key: string]: ParsedIndexLine[];
-}
-
-interface WordNetData {
-    [pos: string]: string; // Store file paths instead of FileHandle
-}
-
-interface Definition {
-    pos: string;
-    synsetOffset: number;
-}
-
-export interface ParsedIndexLine {
-    lemma: string;
-    pos: string;
-    synsetCount: number;
-    pointerCount: number;
-    pointers: string[];
-    senseCount: number;
-    tagSenseCount: number;
-    synsetOffset: number;
-    isComment?: boolean;
-}
-
-export interface Word {
-    word: string;
-    lexId: number;
-}
-
-export interface Pointer {
-    pointerSymbol: string;
-    synsetOffset: number;
-    pos: string;
-    sourceTargetHex: string;
-    data?: ParsedDataLine;
-}
-
-export interface ParsedDataLine {
-    glossary: string;
-    meta: {
-        synsetOffset: number;
-        lexFilenum: number;
-        synsetType: string;
-        wordCount: number;
-        words: Word[];
-        pointerCount: number;
-        pointers: Pointer[];
-    };
-}
+import type { Definition, ParsedDataLine, ParsedIndexLine, Pointer, Word, WordNetData, WordNetIndex } from './types';
 
 // These hold the data in memory.
 let _index: WordNetIndex = {};
@@ -136,11 +87,12 @@ export async function lookup(word: string, skipPointers: boolean = false): Promi
         return Promise.reject(new Error(`No definition(s) found for "${word}".`));
     }
 
-    const promises = definitions.map((definition) => {
-        return readData(definition, skipPointers);
-    });
+    const promises = definitions.flatMap((definition: ParsedIndexLine) =>
+        definition.synsetOffsets.map((synsetOffset) => readData({ pos: definition.pos, synsetOffset }, skipPointers))
+    );
 
-    return Promise.all(promises) as Promise<ParsedDataLine[]>;
+    const results = await Promise.all(promises);
+    return results.filter((r: ParsedDataLine | undefined): r is ParsedDataLine => r !== undefined);
 }
 
 /**
@@ -228,17 +180,18 @@ function parseIndexLine(line: string): ParsedIndexLine {
     }
 
     // Extract remaining values.
-    const [senseCountStr, tagSenseCountStr, synsetOffsetStr, ..._additionalSynsetOffsets] = parts;
+    const [senseCountStr, tagSenseCountStr, ...offsetStrs] = parts;
+    const synsetOffsets = offsetStrs.map((offset) => toNumber(offset));
 
     return {
         lemma,
         pos,
-        synsetCount: toNumber(synsetCountStr), // Corrected to use synsetCountStr
+        synsetCount: toNumber(synsetCountStr),
         pointerCount,
         pointers,
         senseCount: toNumber(senseCountStr),
         tagSenseCount: toNumber(tagSenseCountStr),
-        synsetOffset: toNumber(synsetOffsetStr),
+        synsetOffsets,
     };
 }
 
@@ -255,9 +208,17 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
 
     // Separate metadata from glossary.
     const glossIndex = line.indexOf('|');
-    const metaAndGlossary = [line.slice(0, glossIndex), line.slice(glossIndex + 1)];
-    const metadata = metaAndGlossary[0].split(' ');
-    const glossary = metaAndGlossary[1] ? metaAndGlossary[1].trim() : '';
+    let metadata: string[];
+    let glossary: string;
+
+    if (glossIndex >= 0) {
+        metadata = line.slice(0, glossIndex).trim().split(' ');
+        glossary = line.slice(glossIndex + 1).trim();
+    } else {
+        // If no glossary, the whole line is metadata
+        metadata = line.trim().split(' ');
+        glossary = '';
+    }
 
     // Extract the metadata.
     const [synsetOffsetStr, lexFilenumStr, synsetType, ...parts] = metadata;

@@ -11,10 +11,10 @@
         "strict": true,
         "downlevelIteration": true,
         "skipLibCheck": true,
-        "jsx": "react-jsx",
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "allowJs": true, // Allow JavaScript files to be compiled
-        "checkJs": true // Type check .js files
+        "checkJs": true, // Type check .js files
+        "resolveJsonModule": true
     }
 }
