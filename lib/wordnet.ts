@@ -125,11 +125,11 @@ export async function lookup(word: string, skipPointers: boolean = false): Promi
   let definitions = _index[key];
 
   if (!definitions) {
-    return Promise.reject(new Error(`No definition(s) found for "${word}.`))
+    return Promise.reject(new Error(`No definition(s) found for "${word}".`))
   }
 
-  let promises = definitions.map((defintion) => {
-    return readData(defintion, skipPointers);
+  let promises = definitions.map((definition) => {
+    return readData(definition, skipPointers);
   });
 
   return Promise.all(promises) as Promise<ParsedDataLine[]>;

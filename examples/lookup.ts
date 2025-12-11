@@ -6,7 +6,7 @@ let word: string | undefined;
 let databaseDir: string | undefined;
 
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '-d' || args[i] === '--database') {
+  if ((args[i] === '-d' || args[i] === '--database') && i + 1 < args.length) {
     databaseDir = args[++i];
   } else if (!word) {
     word = args[i];
@@ -59,7 +59,11 @@ function printWord(def: wordnet.ParsedDataLine, includePointers: boolean) {
     definitions.forEach((definition) => {
       printWord(definition, true);
     });
-  } catch (e: any) {
-    console.error(e.message);
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      console.error(e.stack || e);
+    } else {
+      console.error(e);
+    }
   }
 })();
