@@ -33,17 +33,16 @@ const allWords = wordnet.list();
 console.log(`Total words: ${allWords.length}`);
 
 // Look up a word (returns a Promise).
-wordnet.lookup('test')
-  .then((definitions) => {
-    console.log(`\nDefinitions for "test":`);
-    definitions.forEach((def) => {
-      console.log(`  type: ${def.meta.synsetType}`);
-      console.log(`  glossary: ${def.glossary}\n`);
-    });
-  })
-  .catch((e) => {
-    console.error(e);
+try {
+  const definitions = await wordnet.lookup('test');
+  console.log(`\nDefinitions for "test":`);
+  definitions.forEach((def) => {
+    console.log(`  type: ${def.meta.synsetType}`);
+    console.log(`  glossary: ${def.glossary}\n`);
   });
+} catch (e) {
+  console.error(e);
+}
 ```
 
 Check out the [examples folder](examples) for more.
