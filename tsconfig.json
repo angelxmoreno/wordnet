@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "lib": ["es2022"],
+        "module": "esnext",
+        "target": "es2022",
+        "moduleResolution": "bundler",
+        "moduleDetection": "force",
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "composite": true,
+        "strict": true,
+        "downlevelIteration": true,
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowJs": true, // Allow JavaScript files to be compiled
+        "checkJs": true, // Type check .js files
+        "resolveJsonModule": true
+    }
+}
