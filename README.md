@@ -34,7 +34,7 @@ console.log(`Total words: ${allWords.length}`);
 
 // Look up a word (returns a Promise).
 try {
-  const definitions = await wordnet.lookup('test');
+  const definitions: ParsedDataLine[] = await wordnet.lookup('test');
   console.log(`\nDefinitions for "test":`);
   definitions.forEach((def) => {
     console.log(`  type: ${def.meta.synsetType}`);
@@ -52,7 +52,7 @@ Check out the [examples folder](examples) for more.
 ## `wordnet.init([databaseDir])`
 
 Loads the WordNet database. This is an `async` function.
-Takes an optional folder path (as a `String`) to the WordNet index and data files.
+Takes an optional folder path (as a `String`) to the WordNet index and data files. If not provided, it defaults to the `db/` directory included with this package.
 Resets the internal state (`_index`, `_data`) on each call, preventing state pollution.
 Returns a `Promise<void>`. Rejects with an error if the `databaseDir` is invalid or files are missing.
 

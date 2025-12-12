@@ -16,5 +16,6 @@
         "allowJs": true, // Allow JavaScript files to be compiled
         "checkJs": true, // Type check .js files
         "resolveJsonModule": true
-    }
+    },
+    "exclude": ["build"]
 }
