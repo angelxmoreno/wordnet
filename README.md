@@ -16,9 +16,11 @@ This project is a modernized fork of the original [words/wordnet](https://github
 
 # Installation
 
-To install this modernized version:
+Install straight from GitHub (the `prepare` script builds the package during install, so no registry is required):
 
-    $ bun add wordnet
+```bash
+bun add github:angelxmoreno/wordnet#dev
+```
 
 # Usage
 
