@@ -1,4 +1,16 @@
 import path from 'node:path';
+import type {
+    DataPartOfSpeech,
+    Definition,
+    IterateSynsetsOptions,
+    ParsedDataLine,
+    ParsedIndexLine,
+    PartOfSpeech,
+    Pointer,
+    Word,
+    WordNetData,
+    WordNetIndex,
+} from './types';
 
 const SPACE_CHAR = ' ';
 const KEY_PREFIX = '@__';
@@ -17,7 +29,14 @@ const SYNSET_TYPE_MAP: Record<string, string> = {
     r: 'adverb',
 };
 
-import type { Definition, ParsedDataLine, ParsedIndexLine, Pointer, Word, WordNetData, WordNetIndex } from './types';
+const DATA_PARTS: DataPartOfSpeech[] = ['n', 'v', 'a', 'r'];
+const POS_TO_DATA_POS: Record<PartOfSpeech, DataPartOfSpeech> = {
+    n: 'n',
+    v: 'v',
+    a: 'a',
+    r: 'r',
+    s: 'a',
+};
 
 // These hold the data in memory.
 let _index: WordNetIndex = {};
@@ -68,6 +87,43 @@ export function list(): string[] {
     return Object.keys(_index).map((key) => key.substring(KEY_PREFIX.length).replace(/_/g, SPACE_CHAR));
 }
 
+export function listIndexEntries(): ParsedIndexLine[] {
+    if (Object.keys(_index).length === 0) {
+        throw new Error('WordNet database is not initialized. Call init() before accessing the index.');
+    }
+
+    return Object.keys(_index).flatMap((key) => {
+        const entries = _index[key];
+        return entries ? entries.slice() : [];
+    });
+}
+
+export async function* iterateSynsets(
+    pos?: PartOfSpeech,
+    options?: IterateSynsetsOptions
+): AsyncGenerator<ParsedDataLine> {
+    if (Object.keys(_data).length === 0) {
+        throw new Error('WordNet data is not initialized. Call init() before iterating synsets.');
+    }
+
+    const skipPointers = options?.skipPointers ?? false;
+    const dataTargets: DataPartOfSpeech[] = pos ? [resolveDataPos(pos)] : DATA_PARTS;
+
+    for (const target of dataTargets) {
+        const filePath = _data[target];
+        if (!filePath) {
+            continue;
+        }
+
+        for await (const synset of streamSynsetsFromFile(filePath, skipPointers)) {
+            if (pos && synset.meta.pos !== pos) {
+                continue;
+            }
+            yield synset;
+        }
+    }
+}
+
 /**
  * Looks up a word.
  *
@@ -114,7 +170,8 @@ async function readData(definition: Definition, skipPointers: boolean): Promise<
     }
 
     // Get the file path from _data
-    const filePath = _data[pos];
+    const resolvedPos = resolveDataPos(pos);
+    const filePath = _data[resolvedPos];
     if (!filePath) {
         return Promise.reject(new Error(`No file path found for POS: ${pos}`));
     }
@@ -132,6 +189,56 @@ async function readData(definition: Definition, skipPointers: boolean): Promise<
     }
 
     return parseDataLine(line, skipPointers);
+}
+
+function resolveDataPos(pos: PartOfSpeech): DataPartOfSpeech {
+    return POS_TO_DATA_POS[pos];
+}
+
+async function* streamSynsetsFromFile(filePath: string, skipPointers: boolean): AsyncGenerator<ParsedDataLine> {
+    for await (const rawLine of readLinesFromFile(filePath)) {
+        const normalizedLine = rawLine.replace(/\r$/, '').trimStart();
+        if (!/^[0-9]{8}\s/.test(normalizedLine)) {
+            continue;
+        }
+
+        const parsed = await parseDataLine(normalizedLine, skipPointers);
+        yield parsed;
+    }
+}
+
+async function* readLinesFromFile(filePath: string): AsyncGenerator<string> {
+    const reader = Bun.file(filePath).stream().getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                buffer += decoder.decode();
+                break;
+            }
+
+            if (value) {
+                buffer += decoder.decode(value, { stream: true });
+            }
+
+            let newlineIndex = buffer.indexOf('\n');
+            while (newlineIndex !== -1) {
+                const line = buffer.slice(0, newlineIndex);
+                buffer = buffer.slice(newlineIndex + 1);
+                yield line;
+                newlineIndex = buffer.indexOf('\n');
+            }
+        }
+
+        if (buffer.length > 0) {
+            yield buffer;
+        }
+    } finally {
+        reader.releaseLock();
+    }
 }
 
 async function readIndex(filePath: string): Promise<void> {
@@ -178,6 +285,7 @@ function parseIndexLine(line: string): ParsedIndexLine {
     if (!lemma || !pos || !synsetCountStr) {
         throw new Error(`Invalid index line format: missing lemma, pos, or synsetCount in line "${line}"`);
     }
+    const parsedPos = pos as PartOfSpeech;
     const pointerCountStr = parts.shift();
     if (pointerCountStr === undefined) {
         throw new Error(`Invalid index line format: missing pointer count in line "${line}"`);
@@ -203,7 +311,7 @@ function parseIndexLine(line: string): ParsedIndexLine {
 
     return {
         lemma,
-        pos,
+        pos: parsedPos,
         synsetCount: parseInt(synsetCountStr, 10),
         pointerCount,
         pointers,
@@ -287,10 +395,12 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
             );
         }
 
+        const pointerPos = pos as PartOfSpeech;
+
         pointers.push({
             pointerSymbol,
             synsetOffset: parseInt(synsetOffsetStr, 10),
-            pos,
+            pos: pointerPos,
             sourceTargetHex,
         });
     }
@@ -318,10 +428,12 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
     if (!synsetTypeMapped) {
         throw new Error(`Invalid synset type: ${synsetType}`);
     }
+    const pos = synsetType as PartOfSpeech;
 
     return {
         glossary,
         meta: {
+            pos,
             synsetOffset: parseInt(synsetOffsetStr, 10),
             lexFilenum: parseInt(lexFilenumStr, 10),
             synsetType: synsetTypeMapped,
