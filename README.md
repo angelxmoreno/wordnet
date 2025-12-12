@@ -34,7 +34,7 @@ console.log(`Total words: ${allWords.length}`);
 
 // Look up a word (returns a Promise).
 try {
-  const definitions = await wordnet.lookup('test');
+  const definitions: ParsedDataLine[] = await wordnet.lookup('test');
   console.log(`\nDefinitions for "test":`);
   definitions.forEach((def) => {
     console.log(`  type: ${def.meta.synsetType}`);
