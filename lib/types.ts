@@ -27,7 +27,6 @@ export interface Pointer {
 
 export interface ParsedDataLine {
     glossary: string;
-
     meta: {
         synsetOffset: number;
         lexFilenum: number;
@@ -49,6 +48,5 @@ export interface WordNetData {
 
 export interface Definition {
     pos: string;
-
     synsetOffset: number;
 }

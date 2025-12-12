@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 const SPACE_CHAR = ' ';
 const KEY_PREFIX = '@__';
 const EXTENSIONS_MAP: Record<string, string> = {
@@ -38,20 +40,21 @@ export async function init(databaseDir?: string): Promise<void> {
 
     const extensions = Object.keys(EXTENSIONS_MAP);
 
-    if (!databaseDir) {
-        databaseDir = `${__dirname}/../db`;
-    }
+    const dir = databaseDir || path.join(__dirname, '..', 'db');
 
     // Read data from all index files into memory.
     // NOTE: We have to run this serially in order to ensure consistent results.
     for (const ext of extensions) {
-        await readIndex(`${databaseDir}/index.${ext}`);
+        await readIndex(path.join(dir, `index.${ext}`));
     }
 
     // Store the paths to the data files.
     await Promise.all(
         extensions.map(async (ext) => {
-            _data[EXTENSIONS_MAP[ext]] = `${databaseDir}/data.${ext}`;
+            const extKey = EXTENSIONS_MAP[ext];
+            if (extKey) {
+                _data[extKey] = path.join(dir, `data.${ext}`);
+            }
         })
     );
 }
@@ -84,9 +87,14 @@ export async function lookup(word: string, skipPointers: boolean = false): Promi
         return Promise.reject(new Error(`No definition(s) found for "${word}".`));
     }
 
-    const promises = definitions.flatMap((definition: ParsedIndexLine) =>
-        definition.synsetOffsets.map((synsetOffset) => readData({ pos: definition.pos, synsetOffset }, skipPointers))
-    );
+    const promises = definitions.flatMap((definition: ParsedIndexLine) => {
+        if (!definition.synsetOffsets) {
+            return [];
+        }
+        return definition.synsetOffsets.map((synsetOffset) =>
+            readData({ pos: definition.pos, synsetOffset }, skipPointers)
+        );
+    });
 
     const results = await Promise.all(promises);
     return results.filter((r: ParsedDataLine | undefined): r is ParsedDataLine => r !== undefined);
@@ -117,7 +125,11 @@ async function readData(definition: Definition, skipPointers: boolean): Promise<
     const file = Bun.file(filePath);
     const slicedFile = file.slice(synsetOffset, synsetOffset + maxReadLength);
     const content = await slicedFile.text();
-    const line = content.split('\n')[0];
+    const line = content.split('\n').shift();
+
+    if (!line) {
+        return Promise.resolve(undefined);
+    }
 
     return parseDataLine(line, skipPointers);
 }
@@ -139,7 +151,10 @@ async function readIndex(filePath: string): Promise<void> {
             if (!_index[key]) {
                 _index[key] = [];
             }
-            _index[key].push(result);
+            const indexEntry = _index[key];
+            if (indexEntry) {
+                indexEntry.push(result);
+            }
         }
     }
 }
@@ -160,6 +175,9 @@ function parseIndexLine(line: string): ParsedIndexLine {
     }
 
     const [lemma, pos, synsetCountStr, ...parts] = line.trim().split(SPACE_CHAR);
+    if (!lemma || !pos || !synsetCountStr) {
+        throw new Error(`Invalid index line format: missing lemma, pos, or synsetCount in line "${line}"`);
+    }
     const pointerCountStr = parts.shift();
     if (pointerCountStr === undefined) {
         throw new Error(`Invalid index line format: missing pointer count in line "${line}"`);
@@ -178,6 +196,9 @@ function parseIndexLine(line: string): ParsedIndexLine {
 
     // Extract remaining values.
     const [senseCountStr, tagSenseCountStr, ...offsetStrs] = parts;
+    if (!senseCountStr || !tagSenseCountStr) {
+        throw new Error(`Invalid index line format: missing senseCount or tagSenseCount in line "${line}"`);
+    }
     const synsetOffsets = offsetStrs.map((offset) => parseInt(offset, 10));
 
     return {
@@ -219,6 +240,9 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
 
     // Extract the metadata.
     const [synsetOffsetStr, lexFilenumStr, synsetType, ...parts] = metadata;
+    if (!synsetOffsetStr || !lexFilenumStr || !synsetType) {
+        throw new Error(`Invalid data line format: missing synsetOffset, lexFilenum, or synsetType in line "${line}"`);
+    }
 
     // Extract the words.
     const wordCountStr = parts.shift();
@@ -282,9 +306,17 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
         // NOTE: this mutates the pointer objects.
         pointersData.forEach((data, index) => {
             if (data) {
-                pointers[index].data = data;
+                const pointer = pointers[index];
+                if (pointer) {
+                    pointer.data = data;
+                }
             }
         });
+    }
+
+    const synsetTypeMapped = SYNSET_TYPE_MAP[synsetType];
+    if (!synsetTypeMapped) {
+        throw new Error(`Invalid synset type: ${synsetType}`);
     }
 
     return {
@@ -292,7 +324,7 @@ async function parseDataLine(line: string, skipPointers: boolean): Promise<Parse
         meta: {
             synsetOffset: parseInt(synsetOffsetStr, 10),
             lexFilenum: parseInt(lexFilenumStr, 10),
-            synsetType: SYNSET_TYPE_MAP[synsetType],
+            synsetType: synsetTypeMapped,
             wordCount,
             words,
             pointerCount,

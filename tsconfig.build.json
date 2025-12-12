@@ -1,0 +1,19 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "emitDeclarationOnly": true,
+        "declaration": true,
+        "declarationMap": false,
+
+        // Put declarations in build/
+        "outDir": "./build",
+
+        "allowJs": false,
+        "checkJs": false,
+
+        // Override composite:true from main config
+        "composite": false
+    },
+    "include": ["lib/**/*.ts"]
+}
