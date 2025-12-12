@@ -6,13 +6,14 @@
     "main": "build/index.js",
     "types": "build/index.d.ts",
     "files": [
-        "build"
+        "build",
+        "db"
     ],
     "packageManager": "bun@^1.3.0",
     "scripts": {
         "clean": "rimraf build",
         "build": "bun run clean && bun run build:js && bun run build:types",
-        "build:js": "bun build lib/index.ts --outdir build --target node",
+        "build:js": "bun build lib/index.ts --outdir build --target node --format cjs",
         "build:types": "tsc -p tsconfig.build.json",
         "test": "bun test",
         "check-types": "tsc --noEmit",
@@ -36,7 +37,7 @@
     "repository": "git://github.com/words/wordnet",
     "license": "MIT",
     "engines": {
-        "node": ">=20.0.0",
+        "node": ">=20.0.0 <21 || >=22.0.0",
         "bun": ">=1.3.0"
     },
     "peerDependencies": {
