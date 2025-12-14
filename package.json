@@ -5,6 +5,12 @@
     "author": "Dariusz Dziuk <me@dariuszdziuk.com>",
     "main": "build/index.js",
     "types": "build/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./build/index.d.ts",
+            "default": "./build/index.js"
+        }
+    },
     "files": [
         "build",
         "db"
