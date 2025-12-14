@@ -16,9 +16,11 @@ This project is a modernized fork of the original [words/wordnet](https://github
 
 # Installation
 
-To install this modernized version:
+Install straight from GitHub (the `prepare` script builds the package during install, so no registry is required):
 
-    $ bun add wordnet
+```bash
+bun add github:angelxmoreno/wordnet#dev
+```
 
 # Usage
 
@@ -69,6 +71,25 @@ Rejects with an error if no definitions are found for the word.
 Lists all available words in the WordNet database. This is a `synchronous` function and should only be called after `wordnet.init()` has completed.
 Returns `string[]` (an array of all words).
 If called before `wordnet.init()` finishes, or if `init` was called with an empty database, it will return an empty array (or throw an error if `init` failed).
+
+## `wordnet.iterateSynsets([pos[, options]])`
+
+Streams every synset directly from the WordNet data files. When `pos` (`'n' | 'v' | 'a' | 'r' | 's'`) is omitted, all parts of speech are emitted. Pass `{ skipPointers: true }` to avoid recursively loading pointer synsets, which speeds up bulk exports.
+
+```typescript
+await wordnet.init();
+
+for await (const synset of wordnet.iterateSynsets('n', { skipPointers: true })) {
+  console.log(synset.meta.pos, synset.meta.synsetOffset, synset.glossary);
+  // break early if you only need a handful
+}
+```
+
+Each yielded object matches the `ParsedDataLine` shape returned by `lookup`, with an additional `meta.pos` flag so you know which POS the synset belongs to.
+
+## `wordnet.listIndexEntries()`
+
+Returns all parsed index entries (`ParsedIndexLine[]`) currently loaded in memory. Use this to inspect lemmas or iterate over bolts without triggering `lookup`.
 
 # License
 

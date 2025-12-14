@@ -1,5 +1,5 @@
-import type { ParsedDataLine, Pointer, Word } from '../lib/types';
-import * as wordnet from '../lib/wordnet';
+import type { ParsedDataLine, Pointer, Word } from '../lib';
+import * as wordnet from '../lib';
 
 // Simple argument parsing, replacing commander
 const args = process.argv.slice(2);

@@ -5,6 +5,12 @@
     "author": "Dariusz Dziuk <me@dariuszdziuk.com>",
     "main": "build/index.js",
     "types": "build/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./build/index.d.ts",
+            "default": "./build/index.js"
+        }
+    },
     "files": [
         "build",
         "db"
@@ -18,7 +24,8 @@
         "test": "bun test",
         "check-types": "tsc --noEmit",
         "lint": "biome check .",
-        "lint:fix": "biome check --write ."
+        "lint:fix": "biome check --write .",
+        "prepare": "bun run build"
     },
     "dependencies": {},
     "devDependencies": {

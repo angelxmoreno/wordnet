@@ -1,8 +1,5 @@
-// lib/types.ts
-
 export type PartOfSpeech = 'n' | 'v' | 'a' | 's' | 'r';
 export type DataPartOfSpeech = 'n' | 'v' | 'a' | 'r';
-
 export interface ParsedIndexLine {
     lemma: string;
     pos: PartOfSpeech;
@@ -14,12 +11,10 @@ export interface ParsedIndexLine {
     synsetOffsets: number[];
     isComment?: boolean;
 }
-
 export interface Word {
     word: string;
     lexId: number;
 }
-
 export interface Pointer {
     pointerSymbol: string;
     synsetOffset: number;
@@ -27,7 +22,6 @@ export interface Pointer {
     sourceTargetHex: string;
     data?: ParsedDataLine;
 }
-
 export interface ParsedDataLine {
     glossary: string;
     meta: {
@@ -41,20 +35,16 @@ export interface ParsedDataLine {
         pointers: Pointer[];
     };
 }
-
 export interface WordNetIndex {
     [key: string]: ParsedIndexLine[];
 }
-
 export interface WordNetData {
     [pos: string]: string;
 }
-
 export interface Definition {
     pos: PartOfSpeech;
     synsetOffset: number;
 }
-
 export interface IterateSynsetsOptions {
     skipPointers?: boolean;
 }
